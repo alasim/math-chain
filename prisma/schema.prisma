@@ -1,0 +1,56 @@
+// ------------------------------------------------------------
+//  Datasource & Generator
+// ------------------------------------------------------------
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------
+//  User Model (NextAuth compatible)
+// ------------------------------------------------------------
+model User {
+  id            String     @id @default(cuid())
+  username       String    @unique
+  passwordHash  String    
+
+  calculationNodes CalculationNode[] // posts + operations
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+
+model CalculationNode {
+  id           String           @id @default(cuid())
+  parentId     String?          // null = root
+  authorId     String
+  operation    Operation?
+  rightOperand Float?
+  value        Float
+
+  parent       CalculationNode? @relation("TreeRelation", fields: [parentId], references: [id])
+  children     CalculationNode[] @relation("TreeRelation")
+
+  author       User             @relation(fields: [authorId], references: [id])
+
+  createdAt    DateTime         @default(now())
+
+  @@index([parentId])
+  @@index([authorId])
+}
+
+// ------------------------------------------------------------
+//  Operation Enum
+// ------------------------------------------------------------
+enum Operation {
+  ADD
+  SUBTRACT
+  MULTIPLY
+  DIVIDE
+}
